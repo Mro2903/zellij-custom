@@ -1523,6 +1523,14 @@ fn get_keys_and_hints(mi: &ModeInfo) -> Vec<(String, String, Vec<KeyWithModifier
         (s("Toggle Floating"), s("Floating"),
             single_action_key(&km, &[A::ToggleFloatingPanes, TO_NORMAL])),
         (s("Toggle Embed"), s("Embed"), single_action_key(&km, &[A::TogglePaneEmbedOrFloating, TO_NORMAL])),
+        (s("Fourify"), s("Fourify"), action_key(&km, &[
+            A::NewPane { direction: Some(Dir::Right), pane_name: None, start_suppressed: false },
+            A::NewPane { direction: Some(Dir::Down), pane_name: None, start_suppressed: false },
+            A::MoveFocus { direction: Dir::Left },
+            A::NewPane { direction: Some(Dir::Down), pane_name: None, start_suppressed: false },
+            A::MoveFocus { direction: Dir::Up },
+            TO_NORMAL,
+        ])),
         (s("Split Right"), s("Right"), single_action_key(&km, &[A::NewPane{direction: Some(Direction::Right), pane_name: None, start_suppressed: false}, TO_NORMAL])),
         (s("Split Down"), s("Down"), single_action_key(&km, &[A::NewPane{direction: Some(Direction::Down), pane_name: None, start_suppressed: false}, TO_NORMAL])),
         (s("Stack"), s("Stack"), single_action_key(&km, &[A::NewStackedPane{command: None, pane_name: None, near_current_pane: false, no_focus: false, tab_id: None}, TO_NORMAL])),
@@ -2268,6 +2276,32 @@ mod tests {
         assert_eq!(
             region_for(&narrow, &pane).unwrap().start,
             region_for(&wide, &pane).unwrap().start
+        );
+    }
+
+    #[test]
+    fn fourify_shortcut_hint_renders_in_pane_mode() {
+        let pane_keybinds = vec![
+            (ctrl('p'), to_mode(InputMode::Normal)),
+            (
+                key(BareKey::Char('+')),
+                vec![
+                    Action::NewPane { direction: Some(Direction::Right), pane_name: None, start_suppressed: false },
+                    Action::NewPane { direction: Some(Direction::Down), pane_name: None, start_suppressed: false },
+                    Action::MoveFocus { direction: Direction::Left },
+                    Action::NewPane { direction: Some(Direction::Down), pane_name: None, start_suppressed: false },
+                    Action::MoveFocus { direction: Direction::Up },
+                    TO_NORMAL,
+                ],
+            )
+        ];
+        let mut mi = mode_info(InputMode::Pane, '+', '-');
+        mi.keybinds.push((InputMode::Pane, pane_keybinds));
+        let tab = tab_with_two_panes();
+        let line = one_line_ui(&mi, Some(&tab), 500, "", false, None, false);
+        assert!(
+            line.part.contains(&serialize_ribbon(&Text::from("Fourify"))),
+            "Rendered line should contain Fourify hint"
         );
     }
 }
